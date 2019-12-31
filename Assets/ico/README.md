@@ -1,3 +1,1 @@
-These ICOs were downloaded from internet.
-
-I get those from []()
+These icons were downloaded from internet.
