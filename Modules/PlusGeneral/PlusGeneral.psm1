@@ -237,7 +237,10 @@ function Start-pip
         $Renew,
         [string]
         [Alias("p")]
-        $Package = "requirements"
+        $Package = "requirements",
+        [string]
+        [Alias("v")]
+        $PyVersion = "3.6"
     )
     $pipserver = switch ($Source){
         "Aliyun" {"https://mirrors.aliyun.com/pypi/simple/"}
@@ -246,15 +249,17 @@ function Start-pip
         "Netease" {"https://mirrors.163.com/pypi/simple/"}
         "Offical" {""}
     }
-    if (-Not $(Test-Path "C:\Users\alfch\AppData\StaticData\requirements.txt")) {
-        pip freeze > "C:\Users\alfch\AppData\StaticData\requirements.txt"
+    $repfile = "C:\Users\alfch\AppData\StaticData\requirements_" + $PyVersion + ".txt"
+    $dopython = "-NoProfile write-host `"`n`";py -" + $PyVersion + " -m pip"
+    if (-Not $(Test-Path $repfile)) {
+        start-process -FilePath "powershell" -ArgumentList ($dopython + " freeze | Out-File " + $repfile) -WindowStyle hidden
     }
     if( $Renew )
     {
         if( $pipserver -eq "" ){
-            python -m pip install --upgrade pip
+            start-process -FilePath "powershell" -ArgumentList ($dopython + " install --upgrade pip") -NoNewWindow
         } else {
-            python -m pip install -i $pipserver --upgrade pip
+            start-process -FilePath "powershell" -ArgumentList ($dopython + " install -i " + $pipserver + " --upgrade pip") -NoNewWindow
         }
     }
     if ( $Package -eq "pip" ) {
@@ -262,37 +267,37 @@ function Start-pip
             Write-Host "pip has upgraded successfully."
         } else {
             if( $pipserver -eq "" ){
-                python -m pip install --upgrade pip
+                start-process -FilePath "powershell" -ArgumentList ($dopython + " install --upgrade pip") -NoNewWindow
             } else {
-                python -m pip install -i $pipserver --upgrade pip
+                start-process -FilePath "powershell" -ArgumentList ($dopython + " install -i " + $pipserver + " --upgrade pip") -NoNewWindow
             }
         }
     } else {
         if( $pipserver -eq "" ){
             if ( $Package -eq "requirements" ) {
-                $packages = Get-Content "C:\Users\alfch\AppData\StaticData\requirements.txt"
+                $packages = Get-Content $repfile
                 foreach ($theline in $packages) {
                     $pack = ($theline.split("=="))[0]
                     Write-Host "`n===============================================================================`n"
                     Write-Host ("#`t" + $pack + "`n")
-                    python -m pip install --upgrade $pack
+                    start-process -FilePath "powershell" -ArgumentList ($dopython + " install --upgrade " + $pack) -NoNewWindow
                 }
             } else {
-                python -m pip install --upgrade $Package
-                pip freeze > "C:\Users\alfch\AppData\StaticData\requirements.txt"
+                $docommends = $dopython + " install --upgrade " + $Package + ";" + $dopython + " freeze | Out-File " + $repfile
+                start-process -FilePath "powershell" -ArgumentList $docommends -NoNewWindow
             }
         } else {
             if ( $Package -eq "requirements" ) {
-                $packages = Get-Content "C:\Users\alfch\AppData\StaticData\requirements.txt"
+                $packages = Get-Content $repfile
                 foreach ($theline in $packages) {
                     $pack = ($theline.split("=="))[0]
                     Write-Host "`n===============================================================================`n"
                     Write-Host ("#`t" + $pack + "`n")
-                    python -m pip install -i $pipserver --upgrade $pack
+                    start-process -FilePath "powershell" -ArgumentList ($dopython + " install -i " + $pipserver + " --upgrade " + $pack) -NoNewWindow
                 }
             } else {
-                python -m pip install -i $pipserver --upgrade $Package
-                pip freeze > "C:\Users\alfch\AppData\StaticData\requirements.txt"
+                $docommends = $dopython + " install -i " + $pipserver + " --upgrade " + $Package + ";" + $dopython + " freeze | Out-File " + $repfile
+                start-process -FilePath "powershell" -ArgumentList ($docommends) -NoNewWindow
             }
         }
     }
