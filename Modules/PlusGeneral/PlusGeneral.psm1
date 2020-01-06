@@ -50,7 +50,6 @@ function RestartComputer
     }
     Restart-Computer
 }
-function StopShutdown { shutdown -a }
 
 Export-ModuleMember -Function CloseComputer, StopShutdown, RestartComputer 
 function Get-CommandSource
