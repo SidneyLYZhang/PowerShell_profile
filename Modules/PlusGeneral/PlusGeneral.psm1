@@ -75,6 +75,74 @@ Set-Alias which Get-CommandSource
 Export-ModuleMember -Function Get-CommandSource -Alias which
 
 <#  ---------------------------------ILIKEIT---------------------------------  #>
+
+Add-Type -TypeDefinition @" 
+using System; 
+using System.Runtime.InteropServices;
+
+public class ProcessTime 
+{ 
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    public static extern bool GetProcessTimes(IntPtr handle, 
+                                              out IntPtr creation, 
+                                              out IntPtr exit, 
+                                              out IntPtr kernel,
+                                              out IntPtr user);
+}
+"@
+
+function Measure-Time
+{
+    [CmdletBinding()]
+    param ([scriptblock] $Command,
+    [switch] $Silent = $false
+    )
+
+    begin
+    {
+        $creation = 0
+        $exit = 0
+        $kernel = 0
+        $user = 0
+        $psi = new-object diagnostics.ProcessStartInfo
+        $psi.CreateNoWindow = $true
+        $psi.RedirectStandardOutput = $true
+        $psi.FileName = "powershell.exe"
+        $psi.Arguments = "-NoProfile -command $Command"
+        $psi.UseShellExecute = $false
+    }
+    process
+    {
+        $proc = [diagnostics.process]::start($psi)
+        $buffer = $proc.StandardOutput.ReadToEnd()    
+
+        if (!$Silent)
+        {
+            Write-Output $buffer
+        }
+        $proc.WaitForExit()
+    }
+
+    end
+    {
+        $ret = [ProcessTime]::GetProcessTimes($proc.handle,
+                                      [ref]$creation,
+                                      [ref]$exit,
+                                      [ref]$kernel,
+                                      [ref]$user
+                                      )
+        $kernelTime = [long]$kernel/10000000.0
+        $userTime = [long]$user/10000000.0
+        $elapsed = [datetime]::FromFileTime($exit) - [datetime]::FromFileTime($creation)
+
+        Write-Output "Kernel time : $kernelTime"
+        Write-Output "User time   : $userTime"
+        Write-Output "Elapsed     : $elapsed"
+    }
+}
+
+Export-ModuleMember -Function Measure-Time
+
 function Get-MyIPAddress
 {
     <#
