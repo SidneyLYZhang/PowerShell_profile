@@ -34,7 +34,6 @@ Welcome to my website : https://lyzhang.me
 #        PACGAGES        #
 ##########################
 
-import click
 import json
 import os
 import hashlib
