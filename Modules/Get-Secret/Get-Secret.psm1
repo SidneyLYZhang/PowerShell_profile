@@ -21,7 +21,7 @@ function Get-Secrets {
         [String] $psw
     )
 
-    python getSecret.py search -s $args -p $psw
+    python getSecret.py search by curtype $args --password $psw
 }
 
 Export-ModuleMember -Function Get-Secrets
