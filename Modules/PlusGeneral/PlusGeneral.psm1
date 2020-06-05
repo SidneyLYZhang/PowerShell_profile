@@ -50,6 +50,7 @@ function RestartComputer
     }
     Restart-Computer
 }
+function StopShutdown { shutdown -a }
 
 Export-ModuleMember -Function CloseComputer, StopShutdown, RestartComputer 
 function Get-CommandSource
@@ -318,15 +319,16 @@ function Start-pip
     }
     $repfile = "C:\Users\alfch\AppData\StaticData\requirements_" + $PyVersion + ".txt"
     $dopython = "-NoProfile write-host `"`n`";py -" + $PyVersion + " -m pip"
+    $pluspy = "write-host `"`n`";py -" + $PyVersion + " -m pip"
     if (-Not $(Test-Path $repfile)) {
-        start-process -FilePath "powershell" -ArgumentList ($dopython + " freeze | Out-File " + $repfile) -WindowStyle hidden
+        start-process -FilePath "powershell" -ArgumentList ($dopython + " freeze | Out-File " + $repfile + ";exit") -WindowStyle hidden
     }
     if( $Renew )
     {
         if( $pipserver -eq "" ){
-            start-process -FilePath "powershell" -ArgumentList ($dopython + " install --upgrade pip") -NoNewWindow
+            start-process -FilePath "powershell" -ArgumentList ($dopython + " install --upgrade pip" + ";exit") -NoNewWindow
         } else {
-            start-process -FilePath "powershell" -ArgumentList ($dopython + " install -i " + $pipserver + " --upgrade pip") -NoNewWindow
+            start-process -FilePath "powershell" -ArgumentList ($dopython + " install -i " + $pipserver + " --upgrade pip;exit") -NoNewWindow
         }
     }
     if ( $Package -eq "pip" ) {
@@ -334,9 +336,9 @@ function Start-pip
             Write-Host "pip has upgraded successfully."
         } else {
             if( $pipserver -eq "" ){
-                start-process -FilePath "powershell" -ArgumentList ($dopython + " install --upgrade pip") -NoNewWindow
+                start-process -FilePath "powershell" -ArgumentList ($dopython + " install --upgrade pip" + ";exit") -NoNewWindow
             } else {
-                start-process -FilePath "powershell" -ArgumentList ($dopython + " install -i " + $pipserver + " --upgrade pip") -NoNewWindow
+                start-process -FilePath "powershell" -ArgumentList ($dopython + " install -i " + $pipserver + " --upgrade pip;exit") -NoNewWindow
             }
         }
     } else {
@@ -347,10 +349,10 @@ function Start-pip
                     $pack = ($theline.split("=="))[0]
                     Write-Host "`n===============================================================================`n"
                     Write-Host ("#`t" + $pack + "`n")
-                    start-process -FilePath "powershell" -ArgumentList ($dopython + " install --upgrade " + $pack) -NoNewWindow
+                    start-process -FilePath "powershell" -ArgumentList ($dopython + " install --upgrade " + $pack + ";exit") -NoNewWindow
                 }
             } else {
-                $docommends = $dopython + " install --upgrade " + $Package + ";" + $dopython + " freeze | Out-File " + $repfile
+                $docommends = $dopython + " install --upgrade " + $Package + ";" + $pluspy + " freeze | Out-File " + $repfile + ";exit"
                 start-process -FilePath "powershell" -ArgumentList $docommends -NoNewWindow
             }
         } else {
@@ -363,7 +365,7 @@ function Start-pip
                     start-process -FilePath "powershell" -ArgumentList ($dopython + " install -i " + $pipserver + " --upgrade " + $pack) -NoNewWindow
                 }
             } else {
-                $docommends = $dopython + " install -i " + $pipserver + " --upgrade " + $Package + ";" + $dopython + " freeze | Out-File " + $repfile
+                $docommends = $dopython + " install -i " + $pipserver + " --upgrade " + $Package + ";" + $pluspy + " freeze | Out-File " + $repfile + ";exit"
                 start-process -FilePath "powershell" -ArgumentList ($docommends) -NoNewWindow
             }
         }
@@ -371,6 +373,13 @@ function Start-pip
 }
 
 Export-ModuleMember -Function Start-pip
+
+function RunAsAdmin
+{
+    start-process -FilePath "powershell" -ArgumentList "-NoProfile -NoLogo" -NoNewWindow
+}
+
+Export-ModuleMember -Function RunAsAdmin
 
 <#  ---------------------------------WORKING---------------------------------  #>
 function Test-CommandExist 
@@ -410,6 +419,17 @@ function Test-CommandExist
 
 Export-ModuleMember -Function Test-CommandExist
 
+function Head($file, $lines){
+    Get-Content $file -TotalCount $lines -encoding utf8
+}
+
+Export-ModuleMember -Function Head
+
+function Tail($file, $lines){
+    Get-Content $file -Tail $lines -encoding utf8
+}
+
+Export-ModuleMember -Function Tail
 <#  ------------------------------WelcomeScreen------------------------------  #>
 function GET-NowWeather
 {
